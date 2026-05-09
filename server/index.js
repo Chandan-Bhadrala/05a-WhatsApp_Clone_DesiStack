@@ -3,12 +3,20 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import authRoute from "./routes/authRoute.js";
 
 dotenv.config();
 
 const app = express();
+
+// Middlewares
 app.use(cors());
+app.use(express.json());
 app.use(cookieParser());
+app.use(express.urlencoded({ extended: true })); // Helps in decoding/accessing nested data inside the json body.
+
+// Routes
+app.use("/api/auth", authRoute);
 
 const PORT = process.env.PORT || 6001;
 
