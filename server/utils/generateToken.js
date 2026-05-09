@@ -20,12 +20,20 @@ export const verifyJWT = (req, res, next) => {
     return response(res, 401, "Wrong token format");
   }
 
-  jwt.verify(jwtToken, process.env.JWT_SECRET, (err, decodedId) => {
-    if (err) {
-      return response(res, 403, "Bad authorization, Invalid or expired token");
-    }
-    req.userId = decodedId.id;
-
-    next();
-  });
+  try {
+    jwt.verify(jwtToken, process.env.JWT_SECRET, (err, decodedId) => {
+      if (err) {
+        return response(
+          res,
+          403,
+          "Bad authorization, Invalid or expired token",
+        );
+      }
+      req.userId = decodedId.id;
+      next();
+    });
+  } catch (error) {
+    console.error(error);
+    return response(res, 500, "Error while verifying user. Please try again.");
+  }
 };

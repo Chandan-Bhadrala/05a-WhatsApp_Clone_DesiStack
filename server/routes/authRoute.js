@@ -1,9 +1,27 @@
 import { Router } from "express";
-import { sendOTP, verifyUserOTP } from "../controllers/authController.js";
+import {
+  checkAuthenticated,
+  logoutUserController,
+  sendOTP,
+  updateProfileController,
+  verifyUserOTP,
+} from "../controllers/authController.js";
+import { verifyJWT } from "../utils/generateToken.js";
+import { upload } from "../utils/multer.js";
 
 const router = Router();
 
+// Sign-up routes
 router.post("/send-otp", sendOTP);
 router.post("/verify-otp", verifyUserOTP);
+router.get("/logout", logoutUserController);
 
+// Protected Route
+router.put(
+  "/update-profile",
+  verifyJWT,
+  upload.single("media"),
+  updateProfileController,
+);
+router.get("/check-auth", verifyJWT, checkAuthenticated);
 export default router;

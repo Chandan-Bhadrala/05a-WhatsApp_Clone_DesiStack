@@ -11,13 +11,13 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("Gmail services connection failed.");
-  } else {
-    console.log("Gmail configured properly and ready to send the email");
-  }
-});
+// transporter.verify((error, success) => {
+//   if (error) {
+//     console.error("Gmail services connection failed.");
+//   } else {
+//     console.log("Gmail configured properly and ready to send the email");
+//   }
+// });
 
 export const sendOTPToEmail = async (email, otp) => {
   const html = `
