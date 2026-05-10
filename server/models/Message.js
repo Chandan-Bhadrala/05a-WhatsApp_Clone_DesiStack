@@ -20,7 +20,7 @@ const messageSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    content: { types: String }, // Content of the Conversation -> Message text.
+    content: { type: String }, // Content of the Conversation -> Message text.
     imageOrVideoUrl: { type: String }, // Content of the Conversation -> Image/Video storage url.
     contentType: { type: String, enum: ["image", "video", "text"] }, // Restricting the kinds of the contentType for the Message.
     reactions: [

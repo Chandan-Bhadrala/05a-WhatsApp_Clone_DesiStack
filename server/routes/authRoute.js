@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   checkAuthenticated,
+  getAllUsers,
   logoutUserController,
   sendOTP,
   updateProfileController,
@@ -24,4 +25,6 @@ router.put(
   updateProfileController,
 );
 router.get("/check-auth", verifyJWT, checkAuthenticated);
+router.get("/users", verifyJWT, getAllUsers);
+
 export default router;

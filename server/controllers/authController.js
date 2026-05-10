@@ -171,19 +171,47 @@ export const logoutUserController = async (req, res) => {
   }
 };
 
-const getAllUsers = async (req, res) => {
+/**
+## A controller to fetch last message Meta-data of all the conversations.
+
+0. Know about the requesting user from the token in the cookie.
+1. Fetch all user other than self.
+    1. Use lean to get back an JS object instead of bloated Mongo Document which has {save(), populate(), methods...}
+2. For each user, find the conversation using loop via map method.
+    1. Promise.all in the async function, helps in waiting for the whole loop to finish before proceeding to form a resolved answer.
+    2. W/o Promise.all, we'll have [Promise, Promise, Promise...] as a resolved answer. Promise.all ensures code waits till the mongo sent back answer for the each user.
+*/
+export const getAllUsers = async (req, res) => {
   const loggedInUserId = req.userId;
   try {
-    const users = await User.find({ _id: { $ne: loggedInUserId } }).select(
-      "username profilePicture lastSeen isOnline phoneSuffix phoneNumber about",
-    );
+    const users = await User.find({ _id: { $ne: loggedInUserId } })
+      .select(
+        "username profilePicture lastSeen isOnline phoneSuffix phoneNumber about",
+      )
+      .lean();
 
     const userWithConversation = await Promise.all(
       users.map(async (user) => {
         const conversation = await Conversation.findOne({
           participants: { $all: [loggedInUserId, user?._id] },
-        });
+        })
+          .populate({
+            path: "lastMessage",
+            select: "content createdAt sender receiver",
+          })
+          .lean();
+
+        return { ...user, conversation: conversation || null };
       }),
     );
-  } catch (error) {}
+    return response(
+      res,
+      200,
+      "users retrieved successfully",
+      userWithConversation,
+    );
+  } catch (error) {
+    console.error(error);
+    return response(res, 500, "Failed to get all users.");
+  }
 };
