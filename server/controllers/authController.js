@@ -172,7 +172,7 @@ export const logoutUserController = async (req, res) => {
 };
 
 /**
-## A controller to fetch last message Meta-data of all the conversations.
+## A controller to fetch last message Meta-data of all the conversations upon app opening.
 
 0. Know about the requesting user from the token in the cookie.
 1. Fetch all user other than self.

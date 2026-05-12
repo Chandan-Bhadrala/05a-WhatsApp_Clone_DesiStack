@@ -1,7 +1,7 @@
-import { uploadToCloudinary } from "../config/cloudinaryConfig";
+import { uploadToCloudinary } from "../config/cloudinaryConfig.js";
 import { Conversation } from "../models/Conversation.js";
 import { Message } from "../models/Message.js";
-import { response } from "../utils/responseHandler";
+import { response } from "../utils/responseHandler.js";
 
 export const sendMessage = async (req, res) => {
   const { senderId, receiverId, content, messageStatus } = req.body;
@@ -67,6 +67,46 @@ export const sendMessage = async (req, res) => {
       .populate("sender", "username profilePicture")
       .populate("receiver", "username profilePicture");
 
-      return response(res,201, "Message send successfully", populatedMessage)
+    return response(res, 201, "Message send successfully", populatedMessage);
+  } catch (error) {}
+};
+
+// Get all Conversations.
+export const getConversation = async (req, res) => {
+  const userId = req.userId;
+  try {
+    let conversation = await Conversation.find({
+      participants: userId,
+    })
+      .populate("participants", "username profilePicture isOnline lastSeen")
+      .populate({ path: "lastMessage", select: "username profilePicture" })
+      .sort({ updatedAt: -1 });
+
+    return response(
+      res,
+      201,
+      "Conversation retrieved successfully",
+      conversation,
+    );
+  } catch (error) {
+    console.error(error);
+    return response(res, 500, "Failed to retrieved conversation");
+  }
+};
+
+// Get Messages of Specific Conversation.
+export const getMessages = async (req, res) => {
+  const { conversationId } = req.params;
+  const userId = req.userId;
+  try {
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversationId) {
+      return response(res, 404, "Conversation not found");
+    }
+    if (!conversation.participants.includes(userId)) {
+      return response(res, 403, "Not authorized to view this conversation.");
+    }
+
+    const messages = await Message.find({conversation:conversationId})
   } catch (error) {}
 };
