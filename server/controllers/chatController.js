@@ -68,7 +68,14 @@ export const sendMessage = async (req, res) => {
       .populate("receiver", "username profilePicture");
 
     return response(res, 201, "Message send successfully", populatedMessage);
-  } catch (error) {}
+  } catch (error) {
+    console.error(error);
+    return response(
+      res,
+      500,
+      "Failed to send message, please try again later.",
+    );
+  }
 };
 
 // Get all Conversations.
