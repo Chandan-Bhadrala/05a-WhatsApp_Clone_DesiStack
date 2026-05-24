@@ -4,6 +4,8 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import authRoute from "./routes/authRoute.js";
+import chatRoute from "./routes/chatRoute.js"
+
 
 dotenv.config();
 
@@ -17,6 +19,7 @@ app.use(express.urlencoded({ extended: true })); // Helps in decoding/accessing 
 
 // Routes
 app.use("/api/auth", authRoute);
+app.use("/api/chat", chatRoute);
 
 const PORT = process.env.PORT || 6001;
 

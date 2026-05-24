@@ -72,7 +72,7 @@ export const sendMessage = async (req, res) => {
 };
 
 // Get all Conversations.
-export const getConversation = async (req, res) => {
+export const getConversations = async (req, res) => {
   const userId = req.userId;
   try {
     let conversation = await Conversation.find({
@@ -94,7 +94,7 @@ export const getConversation = async (req, res) => {
   }
 };
 
-// Get Messages of Specific Conversation.
+// Get Messages of a Specific Conversation.
 export const getMessages = async (req, res) => {
   const { conversationId } = req.params;
   const userId = req.userId;
@@ -107,6 +107,78 @@ export const getMessages = async (req, res) => {
       return response(res, 403, "Not authorized to view this conversation.");
     }
 
-    const messages = await Message.find({conversation:conversationId})
-  } catch (error) {}
+    const messages = await Message.find({
+      conversation: conversationId,
+    })
+      .populate("sender", "username profilePicture")
+      .populate("receiver", "username profilePicture")
+      .sort("createdAt");
+
+    await Message.updateMany(
+      {
+        conversation: conversationId,
+        receiver: userId,
+        messageStatus: { $in: ["send", "delivered"] },
+      },
+      { $set: { messageStatus: "read" } },
+    );
+
+    conversation.unreadCount = 0;
+    await conversation.save();
+
+    return response(res, 200, "Message retrieved", messages);
+  } catch (error) {
+    console.error(error);
+    return response(res, 500, "Failed to retrieved messages");
+  }
+};
+
+// If the user is within the conversation, mark the message as read instantaneously.
+export const markAsRead = async (req, res) => {
+  const { messageId } = req.body;
+  const userId = req.userId;
+
+  try {
+    // Get relevant message to determine senders.
+    let messages = await Message.find({
+      _id: { $in: messageId },
+      receiver: userId,
+    });
+
+    await Message.updateMany(
+      { _id: { $in: messageId }, receiver: userId },
+      { $set: { messageStatus: "read" } },
+    );
+
+    return response(res, 200, "Messages marked as read", messages);
+  } catch (error) {
+    console.error(error);
+    return response(res, 500, "Failed to mark message as read.");
+  }
+};
+
+// Delete Message
+export const deleteMessage = async (req, res) => {
+  const { messageId } = req.params;
+  const userId = req.userId;
+  try {
+    const message = await Message.findById(messageId);
+    if (!message) {
+      return response(res, 404, "Message not found");
+    }
+
+    console.log("message sender:", message.sender);
+    console.log("message sender string:", message.sender.toString());
+    console.log("req.userId:", userId);
+    console.log("typeof req.userId:", typeof userId);
+    if (message.sender.toString() != userId) {
+      return response(res, 404, "Not authorized to delete the message");
+    }
+    await message.deleteOne();
+
+    return response(res, 200, "Message deleted successfully");
+  } catch (error) {
+    console.error(error);
+    return response(res, 500, "Failed to delete the message");
+  }
 };
