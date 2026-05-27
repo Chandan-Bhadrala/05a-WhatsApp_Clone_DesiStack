@@ -39,6 +39,7 @@ export const createStatus = async (req, res) => {
       user: userId,
       content: mediaUrl || content,
       contentType: finalContentType,
+      expiresAt
     });
 
     await status.save();
@@ -72,5 +73,60 @@ export const getStatus = async (req, res) => {
   } catch (error) {
     console.error(error);
     return response(res, 500, "Failed to retrieve statuses");
+  }
+};
+
+// Data of users who viewed status
+export const viewStatus = async (req, res) => {
+  const { statusId } = req.params;
+  const userId = req.userId;
+  try {
+    const status = await Status.findById(statusId);
+    if (!status) {
+      return response(res, 404, "Status not found");
+    }
+
+    if (!status.viewers.includes(userId)) {
+      status.viewers.push(userId);
+      await status.save();
+
+      const updatedStatus = await Status.findById(statusId)
+        .populate("user", "username profilePicture")
+        .populate("viewers", "username profilePicture");
+
+      // Emit event via sockets.
+    } else {
+      console.log("user already viewed the status");
+    }
+
+    return response(res, 200, "Status viewed successfully");
+  } catch (error) {
+    console.error(error);
+    return response(res, 500, "Failed to update user status data.");
+  }
+};
+
+export const deleteStatus = async (req, res) => {
+  const { statusId } = req.params;
+  const userId = req.userId;
+
+  try {
+    const status = await Status.findById(statusId);
+    if (!status) {
+      return response(res, 404, "Status not found");
+    }
+
+    if (status.user.toString() !== userId) {
+      return response(res, 403, "Not authorized to delete this status.");
+    }
+
+    await status.deleteOne();
+
+    // Emit delete response using socket.
+
+    return response(res, 200, "Status deleted successfully");
+  } catch (error) {
+    console.error(error);
+    return response(res, 500, "Failed to delete the status.");
   }
 };
