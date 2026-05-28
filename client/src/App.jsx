@@ -1,10 +1,15 @@
-import './App.css'
+import "./App.css";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Login from "./pages/user-login/Login";
 
 function App() {
-
   return (
-    <div className=' bg-amber-950'>Hello</div>
-  )
+    <Router>
+      <Routes>
+        <Route path="/user-login" element={<Login />} />
+      </Routes>
+    </Router>
+  );
 }
 
-export default App
+export default App;
