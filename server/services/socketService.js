@@ -155,7 +155,7 @@ export const initializeSocket = (server) => {
           );
 
           if (existingIndex > -1) {
-            const existing = message.reactions(existingIndex);
+            const existing = message.reactions[existingIndex];
             if (existing.emoji == emoji) {
               // Remove already existing same emoji.
               message.reactions.splice(existingIndex, 1);
@@ -231,8 +231,7 @@ export const initializeSocket = (server) => {
     };
 
     // Disconnect Event.
-    socket.on("disconnect", handleDisconnected)
-
+    socket.on("disconnect", handleDisconnected);
   });
 
   // Attach the online user-map to the socket server for the external use, in other controllers, outside this file.
