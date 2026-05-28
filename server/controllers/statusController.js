@@ -39,7 +39,7 @@ export const createStatus = async (req, res) => {
       user: userId,
       content: mediaUrl || content,
       contentType: finalContentType,
-      expiresAt
+      expiresAt,
     });
 
     await status.save();
@@ -47,6 +47,16 @@ export const createStatus = async (req, res) => {
     const populatedStatus = await Status.findOne(status?._id)
       .populate("user", "username profilePicture")
       .populate("viewers", "username profilePicture");
+
+    // Emit socket event
+    if (req.io && req.socketUserMap) {
+      // Broadcast to all connecting users except the status creator.
+      for (const [connectedUserId, socketId] of req.socketUserMap) {
+        if (connectedUserId !== userId) {
+          req.io.to(socketId).emit("new_status", populatedStatus);
+        }
+      }
+    }
 
     return response(res, 201, "Status created successfully", populatedStatus);
   } catch (error) {
@@ -94,7 +104,25 @@ export const viewStatus = async (req, res) => {
         .populate("user", "username profilePicture")
         .populate("viewers", "username profilePicture");
 
-      // Emit event via sockets.
+      // Emit socket event
+      if (req.io && req.socketUserMap) {
+        // Broadcast to all connecting users except the status creator.
+        const statusOwnerSocketId = req.socketUserMap.get(
+          status.user._id.toString(),
+        );
+
+        if (statusOwnerSocketId) {
+          const viewData = {
+            statusId,
+            viewerId: userId,
+            totalViewers: updatedStatus.viewers.length,
+            viewers: updatedStatus.viewers, // Viewers details
+          };
+          req.io.to(statusOwnerSocketId).emit("status_viewed", viewData);
+        } else {
+          console.log("Status owner are not connected.");
+        }
+      }
     } else {
       console.log("user already viewed the status");
     }
@@ -123,6 +151,13 @@ export const deleteStatus = async (req, res) => {
     await status.deleteOne();
 
     // Emit delete response using socket.
+    if (req.io && req.socketUserMap) {
+      for (const [connectedUserId, socketId] of req.socketUserMap) {
+        if (connectedUserId !== userId) {
+          req.io.to(socketId).emit("status_deleted", statusId);
+        }
+      }
+    }
 
     return response(res, 200, "Status deleted successfully");
   } catch (error) {
